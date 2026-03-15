@@ -6,7 +6,7 @@ import client from '../api/client'
 import NetworkHealthBanner from '../components/NetworkHealthBanner'
 import { DistrictDetailSkeleton } from '../components/Skeleton'
 
-mapboxgl.accessToken = 'pk.eyJ1IjoiZnVycWFuZmlxaSIsImEiOiJjbW01YWhtOXIwM29hMnNzOGIzMnFxaGgyIn0.FNAHDUedWo0dZyVV4h_q_w'
+mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN
 
 const HEALTH_COLORS = { good: '#16a34a', warning: '#f39c12', critical: '#dc2626' }
 function getHealthColor(h) { return HEALTH_COLORS[h] ?? HEALTH_COLORS.good }

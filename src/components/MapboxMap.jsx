@@ -3,7 +3,7 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { districts, getHealthColor, getHealthLabel, HEALTH_COLORS } from '../rawData'
 
-mapboxgl.accessToken = 'pk.eyJ1IjoiZnVycWFuZmlxaSIsImEiOiJjbW01YWhtOXIwM29hMnNzOGIzMnFxaGgyIn0.FNAHDUedWo0dZyVV4h_q_w'
+mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN
 
 // ─── ROUTE API ────────────────────────────────────────────────────────────────
 async function getRoute(waypoints) {

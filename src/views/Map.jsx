@@ -3,7 +3,7 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import client from '../api/client'
 
-mapboxgl.accessToken = 'pk.eyJ1IjoiZnVycWFuZmlxaSIsImEiOiJjbW01YWhtOXIwM29hMnNzOGIzMnFxaGgyIn0.FNAHDUedWo0dZyVV4h_q_w'
+mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN
 
 // ─── Health helpers ───────────────────────────────────────────────────────────
 const HEALTH_COLORS = { good: '#16a34a', warning: '#f39c12', critical: '#dc2626' }
