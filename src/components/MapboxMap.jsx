@@ -3,7 +3,7 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { districts, getHealthColor, getHealthLabel, HEALTH_COLORS } from '../rawData'
 
-mapboxgl.accessToken = ''
+mapboxgl.accessToken = 'pk.eyJ1IjoiZnVycWFuZmlxaSIsImEiOiJjbW01YWhtOXIwM29hMnNzOGIzMnFxaGgyIn0.FNAHDUedWo0dZyVV4h_q_w'
 
 // ─── ROUTE API ────────────────────────────────────────────────────────────────
 async function getRoute(waypoints) {
@@ -274,9 +274,11 @@ function MapboxMap() {
   useEffect(() => {
     const map = new mapboxgl.Map({
       container: mapRef.current,
-      style: 'mapbox://styles/mapbox/standard',
+      style: 'mapbox://styles/mapbox/light-v11',
+      // style: 'mapbox://styles/mapbox/standard',
       center: [46.7167, 24.6833],
       zoom: 11,
+      attributionControl: false,
     })
     mapInstance.current = map
 

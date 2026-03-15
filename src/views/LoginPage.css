@@ -1,0 +1,301 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap');
+
+.login-page {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: 100vh;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-page *, .login-page *::before, .login-page *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Background grid ───────────────────────────────────────────────────────── */
+.login-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Navbar ────────────────────────────────────────────────────────────────── */
+.login-nav {
+  position: relative;
+  z-index: 10;
+  padding: 20px 32px;
+}
+
+.login-nav-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #0f172a;
+  text-decoration: none;
+  letter-spacing: -0.3px;
+}
+
+/* ── Card wrapper ──────────────────────────────────────────────────────────── */
+.login-card-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px 48px;
+  position: relative;
+  z-index: 10;
+}
+
+/* ── Card ──────────────────────────────────────────────────────────────────── */
+.login-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 40px 40px 32px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 4px 40px rgba(15,23,42,0.08), 0 1px 3px rgba(15,23,42,0.05);
+}
+
+.login-card-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.login-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.login-icon-wrap img {
+  width: 28px;
+  height: 28px;
+}
+
+.login-card-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+
+.login-card-header p {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 400;
+}
+
+/* ── Form ──────────────────────────────────────────────────────────────────── */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.login-field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.login-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.login-forgot {
+  font-size: 12px;
+  color: #1d4ed8;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.login-forgot:hover {
+  text-decoration: underline;
+}
+
+.login-field input {
+  height: 42px;
+  padding: 0 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #0f172a;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.login-field input::placeholder {
+  color: #cbd5e1;
+}
+
+.login-field input:focus {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgba(29,78,216,0.08);
+}
+
+/* ── Error ─────────────────────────────────────────────────────────────────── */
+.login-error {
+  font-size: 12.5px;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-weight: 500;
+}
+
+/* ── Primary button ────────────────────────────────────────────────────────── */
+.login-btn {
+  height: 44px;
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.login-btn:hover:not(:disabled) {
+  background: #1e40af;
+  transform: translateY(-1px);
+}
+
+.login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ── Spinner ───────────────────────────────────────────────────────────────── */
+.login-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Divider ───────────────────────────────────────────────────────────────── */
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 0;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+/* ── Demo button ───────────────────────────────────────────────────────────── */
+.login-btn-demo {
+  height: 42px;
+  width: 100%;
+  background: #fff;
+  color: #374151;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.login-btn-demo:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+  transform: translateY(-1px);
+}
+
+/* ── Footer note ───────────────────────────────────────────────────────────── */
+.login-footer-note {
+  text-align: center;
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 20px;
+}
+
+.login-footer-note a {
+  color: #1d4ed8;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.login-footer-note a:hover {
+  text-decoration: underline;
+}
+
+/* ── Back link ─────────────────────────────────────────────────────────────── */
+.login-back {
+  margin-top: 20px;
+  font-size: 13px;
+}
+
+.login-back a {
+  color: #64748b;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.login-back a:hover {
+  color: #0f172a;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 28px 20px 24px;
+  }
+}

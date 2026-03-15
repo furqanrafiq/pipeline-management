@@ -1,0 +1,128 @@
+/* ── Shimmer base ──────────────────────────────────────────────────────────── */
+.skel {
+  background: linear-gradient(
+    90deg,
+    #f1f5f9 25%,
+    #e2e8f0 50%,
+    #f1f5f9 75%
+  );
+  background-size: 200% 100%;
+  animation: skel-shimmer 2.2s ease-in-out infinite;
+  display: block;
+}
+
+@keyframes skel-shimmer {
+  0%   { background-position: 200% 0 }
+  100% { background-position: -200% 0 }
+}
+
+/* ── Layout helpers ────────────────────────────────────────────────────────── */
+.skel-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ── Overview skeleton ─────────────────────────────────────────────────────── */
+.skel-overview {
+  width: 100%;
+}
+
+.skel-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.skel-kpi-card {
+  background: #fff;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+/* ── Table skeleton ────────────────────────────────────────────────────────── */
+.skel-table-wrap {
+  background: #fff;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.skel-table-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f8fafc;
+}
+
+.skel-table-header {
+  background: #f8fafc;
+  padding: 10px 16px;
+}
+
+/* ── AI skeleton ───────────────────────────────────────────────────────────── */
+.skel-ai {
+  width: 100%;
+}
+
+.skel-ai-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+/* ── Rankings skeleton ─────────────────────────────────────────────────────── */
+.skel-rankings {
+  width: 100%;
+}
+
+.skel-rank-table {
+  background: #fff;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.skel-rank-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 11px 16px;
+  border-bottom: 1px solid #f8fafc;
+}
+
+.skel-rank-row:last-child {
+  border-bottom: none;
+}
+
+.skel-rank-head {
+  background: #f8fafc;
+  padding: 10px 16px;
+}
+
+.skel-rank-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 16px;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .skel-kpi-grid,
+  .skel-ai-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .skel-kpi-grid,
+  .skel-ai-grid,
+  .skel-rankings-grid {
+    grid-template-columns: 1fr;
+  }
+}
