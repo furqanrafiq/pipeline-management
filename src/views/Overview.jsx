@@ -8,8 +8,7 @@ import {
 } from 'recharts'
 import NetworkHealthBanner from '../components/NetworkHealthBanner'
 import AiConfidenceBlock from '../components/AiConfidenceBlock'
-import { OverviewSkeleton } from '../components/Skeleton'
-import { useKpiSummary, useTasks, useNetGains, useResponseTimes } from '../hooks/Usekpi'
+import { useKpiSummary, useTasks, useNetGains, useResponseTimes, useActiveRepairs } from '../hooks/Usekpi'
 import { useIncidents } from '../hooks/useIncidents'
 import { usePredictions } from '../hooks/usePredictions'
 import { useNameMaps } from '../hooks/useNameMaps'
@@ -24,6 +23,21 @@ const TT = {
   cursor: { fill: 'rgba(37,99,235,.04)' },
 }
 
+function TrendBadge({ trend, periodLabel, invertGood = false }) {
+  if (!trend) return null
+  const { pct, dir } = trend
+  const isGood = invertGood ? dir === 'down' : dir === 'up'
+  const isFlat = dir === 'flat'
+  const color  = isFlat ? '#9ca3af' : isGood ? '#16a34a' : '#dc2626'
+  const arrow  = isFlat ? '—' : dir === 'up' ? '▲' : '▼'
+  return (
+    <div className="kpi-trend">
+      <span style={{ color, fontWeight: 700 }}>{arrow} {pct}%</span>
+      <span className="trend-cmp">{periodLabel}</span>
+    </div>
+  )
+}
+
 function ConfBar({ pct }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -36,7 +50,7 @@ function ConfBar({ pct }) {
 }
 
 // ─── Detail panel content ─────────────────────────────────────────────────────
-function DetailContent({ activeCard, incidents, responseTimes, tasks, gains, dn, ds, san, period = 'today' }) {
+function DetailContent({ activeCard, incidents, responseTimes, tasks, gains, repairs, dn, ds, san, period = 'today' }) {
   const critChartData = ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10'].map((id) => ({
     d: ds(id),
     critical: incidents.filter((i) => i.districtId === id && i.status === 'critical').length,
@@ -118,7 +132,7 @@ function DetailContent({ activeCard, incidents, responseTimes, tasks, gains, dn,
   }
 
   const tbl = tables[activeCard]
-  if (!tbl) return null
+  if (!tbl && activeCard !== 'activerepairs') return null
 
   return (
     <>
@@ -219,24 +233,74 @@ function DetailContent({ activeCard, incidents, responseTimes, tasks, gains, dn,
             </ResponsiveContainer>
           </div>
         )}
+
+        {activeCard === 'activerepairs' && (
+          <div className="dp-chart-box dp-chart-box--wide">
+            <div className="dp-chart-label">
+              Active Repair Jobs — Field Teams
+              {repairs?.mismatch && (
+                <span style={{ marginLeft: 10, color: '#dc2626', fontWeight: 700, fontSize: 11 }}>
+                  ⚠ {repairs.missingTeams} unassigned incident{repairs.missingTeams > 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+            {(!repairs?.jobs || repairs.jobs.length === 0) ? (
+              <div style={{ textAlign: 'center', color: '#9ca3af', padding: '20px 0', fontSize: 13 }}>No active repair teams currently dispatched</div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                    {['Job #', 'Team', 'Area', 'Joint', 'Elapsed', 'Severity'].map(h => (
+                      <th key={h} style={{ padding: '7px 12px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: '#9ca3af', letterSpacing: .5, textTransform: 'uppercase' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {repairs.jobs.map((job, i) => {
+                    const hrs  = Math.floor(job.elapsedMinutes / 60)
+                    const mins = job.elapsedMinutes % 60
+                    const elapsed = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`
+                    const sevColor = job.severity === 'critical' ? '#dc2626' : '#ca8a04'
+                    return (
+                      <tr key={job.jobNumber} style={{ borderBottom: '1px solid #f3f4f6', background: i % 2 === 0 ? '#fff' : '#fafbff' }}>
+                        <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontWeight: 700, color: '#2563eb', fontSize: 11 }}>{job.jobNumber}</td>
+                        <td style={{ padding: '8px 12px', fontWeight: 600, color: '#111827' }}>{job.teamName}</td>
+                        <td style={{ padding: '8px 12px', color: '#374151' }}>{job.area}</td>
+                        <td style={{ padding: '8px 12px', fontFamily: 'monospace', color: '#6b7280', fontSize: 11 }}>{job.jointRef}</td>
+                        <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontWeight: 600, color: job.elapsedMinutes > 60 ? '#dc2626' : '#374151' }}>{elapsed}</td>
+                        <td style={{ padding: '8px 12px' }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: `${sevColor}15`, color: sevColor, textTransform: 'uppercase', border: `1px solid ${sevColor}30` }}>
+                            {job.severity}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
       </div>
 
-      <div style={{ overflowX: 'auto' }}>
-        <table className="dp-table">
-          <thead>
-            <tr>{tbl.headers.map((h) => <th key={h}>{h}</th>)}</tr>
-          </thead>
-          <tbody>
-            {tbl.rows.length === 0 ? (
-              <tr><td colSpan={tbl.headers.length} style={{ textAlign: 'center', color: '#9ca3af', padding: 20 }}>No data</td></tr>
-            ) : (
-              tbl.rows.map((row, i) => (
-                <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}</tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {tbl && (
+        <div style={{ overflowX: 'auto' }}>
+          <table className="dp-table">
+            <thead>
+              <tr>{tbl.headers.map((h) => <th key={h}>{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {tbl.rows.length === 0 ? (
+                <tr><td colSpan={tbl.headers.length} style={{ textAlign: 'center', color: '#9ca3af', padding: 20 }}>No data</td></tr>
+              ) : (
+                tbl.rows.map((row, i) => (
+                  <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}</tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </>
   )
 }
@@ -249,14 +313,13 @@ export default function OverviewView() {
   const detailRef = useRef(null)
 
   const { dn, ds, san } = useNameMaps()
-  const { summary, loading: loadingSummary } = useKpiSummary(period)
-  const { incidents: allInc, loading: loadingInc } = useIncidents()
+  const { summary } = useKpiSummary(period)
+  const { incidents: allInc } = useIncidents()
   const { data: responseTimes } = useResponseTimes(period)
   const { data: tasks } = useTasks(period)
   const { data: gains } = useNetGains(period)
+  const { data: repairs } = useActiveRepairs()
   const { predictions, summary: aiSummary } = usePredictions()
-
-  const initialLoading = loadingSummary || loadingInc
 
   const critical = allInc.filter((i) => i.status === 'critical')
   const live = allInc.filter((i) => i.status === 'live')
@@ -280,6 +343,8 @@ export default function OverviewView() {
   const periodSummary = summary || {}
   const totalGain = summary?.totalNetGain ?? 0
   const gainUnit = summary?.gainUnit ?? 'k'
+  const trends = summary?.trends || {}
+  const cmpLabel = period === 'today' ? 'vs yesterday' : period === 'mtd' ? 'vs last month' : 'vs last year'
 
   const avg = summary?.avgResponseHours || 1.4
 
@@ -364,9 +429,8 @@ export default function OverviewView() {
     response: 'AVG RESPONSE TIME — BY DISTRICT',
     tasks: 'COMPLETED TASKS — BY DISTRICT',
     netgain: 'NET GAIN — BY DISTRICT',
+    activerepairs: 'ACTIVE REPAIRS — FIELD TEAMS',
   }
-
-  if (initialLoading) return <OverviewSkeleton />
 
   return (
     <div className="overview-view">
@@ -402,7 +466,7 @@ export default function OverviewView() {
         <div className={`kpi-card ${activeCard === 'critical' ? 'kpi-selected' : ''}`} onClick={() => toggleCard('critical')}>
           <div className="kpi-top"><div className="kpi-name">Critical Incidents</div><div className="kpi-icon">🔴</div></div>
           <div className="kpi-val">{periodSummary.criticalCount ?? '—'}</div>
-          <div className="kpi-trend"><span className="trend-down">▼ 25%</span><span className="trend-cmp">{period === 'today' ? 'vs yesterday' : period === 'mtd' ? 'vs last month' : 'vs last year'}</span></div>
+          <TrendBadge trend={trends.critical} periodLabel={cmpLabel} invertGood={true} />
           {incByDist.length > 0 ? (
             <div onClick={(e) => e.stopPropagation()}>
               <ResponsiveContainer width="100%" height={64}>
@@ -417,14 +481,14 @@ export default function OverviewView() {
           ) : (
             <div style={{ height: 44, display: 'flex', alignItems: 'center', fontSize: 11, color: '#9ca3af' }}>No critical incidents ✓</div>
           )}
-          {topCritical && <AiConfidenceBlock incident={topCritical} />}
+          {topCritical && <AiConfidenceBlock incident={topCritical} dn={dn} san={san} />}
         </div>
 
         {/* 2 — Live Incidents */}
         <div className={`kpi-card ${activeCard === 'live' ? 'kpi-selected' : ''}`} onClick={() => toggleCard('live')}>
           <div className="kpi-top"><div className="kpi-name">Live Incidents</div><div className="kpi-icon">🟡</div></div>
           <div className="kpi-val">{periodSummary.liveCount ?? '—'}</div>
-          <div className="kpi-trend"><span className="trend-up">▲ 8%</span><span className="trend-cmp">vs yesterday</span></div>
+          <TrendBadge trend={trends.live} periodLabel={cmpLabel} invertGood={true} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
             <PieChart width={48} height={48}>
               <Pie data={donutData} cx={20} cy={20} innerRadius={12} outerRadius={20} dataKey="value" startAngle={90} endAngle={-270} strokeWidth={0}>
@@ -450,78 +514,11 @@ export default function OverviewView() {
           </div>
         </div>
 
-        {/*  — Completed Tasks */}
-        <div className={`kpi-card ${activeCard === 'tasks' ? 'kpi-selected' : ''}`} onClick={() => toggleCard('tasks')}>
-          <div>
-            <div className="kpi-top"><div className="kpi-name">Completed Tasks</div><div className="kpi-icon">✅</div></div>
-            <div className="kpi-val">{periodSummary.completedToday ?? '—'}</div>
-            <div className="kpi-trend"><span className="trend-up">▲ 18%</span><span className="trend-cmp">vs yesterday</span></div>
-          </div>
-          <div>
-            <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {filteredTasks.map((t) => (
-                <div key={t.districtId} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 9, color: '#9ca3af', width: 44, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ds(t.districtId)}</span>
-                  <div style={{ flex: 1, height: 5, background: '#ede9e0', borderRadius: 3, overflow: 'hidden' }}>
-                    <div style={{ width: `${(t.today / maxTasks) * 100}%`, height: '100%', borderRadius: 3, background: t.completionRate < 50 ? '#dc2626' : t.completionRate < 75 ? '#ca8a04' : '#16a34a' }} />
-                  </div>
-                  <span style={{ fontSize: 9, color: '#9ca3af', width: 16, textAlign: 'right' }}>{t.today}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* 4 — Avg Response Time */}
-        <div className={`kpi-card ${activeCard === 'response' ? 'kpi-selected' : ''}`} onClick={() => toggleCard('response')}>
-          <div className="kpi-top"><div className="kpi-name">Avg Response</div><div className="kpi-icon">⏱</div></div>
-          <div className="kpi-val">{periodSummary.avgResponseHours ?? '—'}<span className="kpi-unit">hr</span></div>
-          <div className="kpi-trend"><span className="trend-down">▼ 12%</span><span className="trend-cmp">{period === 'today' ? 'vs yesterday' : period === 'mtd' ? 'vs last month' : 'vs last year'}</span></div>
-          <div onClick={(e) => e.stopPropagation()}>
-            <ResponsiveContainer width="100%" height={100}>
-              <AreaChart data={respSparkData} margin={{ top: 8, right: 4, left: 2, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="respGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#d97706" stopOpacity={0.22} />
-                    <stop offset="100%" stopColor="#d97706" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="lbl" tick={{ fontSize: 8, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <YAxis domain={respDomain} tick={{ fontSize: 8, fill: '#8b7355' }} axisLine={false} tickLine={false} width={32} tickFormatter={(v) => `${v}h`} />
-                <Tooltip {...TT} formatter={(v) => [`${v} hr`, 'Avg Response']} />
-                <Area type="monotone" dataKey="val" stroke="#d97706" strokeWidth={2} fill="url(#respGrad)" dot={false} activeDot={{ r: 3, fill: '#d97706' }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* 5 — Net Gain */}
-        <div className={`kpi-card ${activeCard === 'netgain' ? 'kpi-selected' : ''}`} onClick={() => toggleCard('netgain')}>
-          <div className="kpi-top"><div className="kpi-name">Net Gain</div><div className="kpi-icon">💰</div></div>
-          <div className="kpi-val">{gainDisplay}</div>
-          <div className="kpi-trend"><span className="trend-up">▲ 34%</span><span className="trend-cmp">vs yesterday</span></div>
-          <div onClick={(e) => e.stopPropagation()}>
-            <ResponsiveContainer width="100%" height={100}>
-              <AreaChart data={gainSparkData} margin={{ top: 8, right: 4, left: 2, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="gainGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#7c3aed" stopOpacity={0.22} />
-                    <stop offset="100%" stopColor="#7c3aed" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="lbl" tick={{ fontSize: 8, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <YAxis domain={gainDomain} tick={{ fontSize: 8, fill: '#8b7355' }} axisLine={false} tickLine={false} width={38} tickFormatter={(v) => gainUnit === 'k' ? `${v}k` : `${(+v).toFixed(1)}M`} />
-                <Tooltip {...TT} formatter={(v) => [gainUnit === 'k' ? `$${v}k` : `$${(+v).toFixed(1)}M`, 'Net Gain']} />
-                <Area type="monotone" dataKey="val" stroke="#7c3aed" strokeWidth={2} fill="url(#gainGrad)" dot={false} activeDot={{ r: 3, fill: '#7c3aed' }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
+        
         {/* 6 — AI Predictive */}
         <div
           className={`kpi-card ai-card ${aiSummary.critical > 0 ? 'ai-card-critical' : ''}`}
-          onClick={() => navigate('/ai')}
+          onClick={() => navigate('/app/ai')}
           style={{ cursor: 'pointer', borderColor: aiSummary.critical > 0 ? 'rgba(220,38,38,.3)' : 'rgba(124,58,237,.25)' }}
         >
           <div className="kpi-top"><div className="kpi-name">AI Predictive</div><div className="kpi-icon">🧠</div></div>
@@ -552,6 +549,115 @@ export default function OverviewView() {
           <div style={{ fontSize: 11, color: '#7c3aed', fontWeight: 600 }}>→ View full AI analysis</div>
         </div>
 
+        {/*  — Completed Tasks */}
+        <div className={`kpi-card ${activeCard === 'tasks' ? 'kpi-selected' : ''}`} onClick={() => toggleCard('tasks')}>
+          <div>
+            <div className="kpi-top"><div className="kpi-name">Completed Tasks</div><div className="kpi-icon">✅</div></div>
+            <div className="kpi-val">{periodSummary.completedToday ?? '—'}</div>
+            <TrendBadge trend={trends.tasks} periodLabel={cmpLabel} />
+          </div>
+          <div>
+            <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {filteredTasks.map((t) => (
+                <div key={t.districtId} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 9, color: '#9ca3af', width: 44, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ds(t.districtId)}</span>
+                  <div style={{ flex: 1, height: 5, background: '#ede9e0', borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ width: `${(t.today / maxTasks) * 100}%`, height: '100%', borderRadius: 3, background: t.completionRate < 50 ? '#dc2626' : t.completionRate < 75 ? '#ca8a04' : '#16a34a' }} />
+                  </div>
+                  <span style={{ fontSize: 9, color: '#9ca3af', width: 16, textAlign: 'right' }}>{t.today}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 4 — Avg Response Time */}
+        <div className={`kpi-card ${activeCard === 'response' ? 'kpi-selected' : ''}`} onClick={() => toggleCard('response')}>
+          <div className="kpi-top"><div className="kpi-name">Avg Response</div><div className="kpi-icon">⏱</div></div>
+          <div className="kpi-val">{periodSummary.avgResponseHours ?? '—'}<span className="kpi-unit">hr</span></div>
+          <TrendBadge trend={trends.response} periodLabel={cmpLabel} invertGood={true} />
+          <div onClick={(e) => e.stopPropagation()}>
+            <ResponsiveContainer width="100%" height={100}>
+              <AreaChart data={respSparkData} margin={{ top: 8, right: 4, left: 2, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="respGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#d97706" stopOpacity={0.22} />
+                    <stop offset="100%" stopColor="#d97706" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="lbl" tick={{ fontSize: 8, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                <YAxis domain={respDomain} tick={{ fontSize: 8, fill: '#8b7355' }} axisLine={false} tickLine={false} width={32} tickFormatter={(v) => `${v}h`} />
+                <Tooltip {...TT} formatter={(v) => [`${v} hr`, 'Avg Response']} />
+                <Area type="monotone" dataKey="val" stroke="#d97706" strokeWidth={2} fill="url(#respGrad)" dot={false} activeDot={{ r: 3, fill: '#d97706' }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* 5 — Net Gain */}
+        {/* <div className={`kpi-card ${activeCard === 'netgain' ? 'kpi-selected' : ''}`} onClick={() => toggleCard('netgain')}>
+          <div className="kpi-top"><div className="kpi-name">Net Gain</div><div className="kpi-icon">💰</div></div>
+          <div className="kpi-val">{gainDisplay}</div>
+          <TrendBadge trend={trends.netgain} periodLabel={cmpLabel} />
+          <div onClick={(e) => e.stopPropagation()}>
+            <ResponsiveContainer width="100%" height={100}>
+              <AreaChart data={gainSparkData} margin={{ top: 8, right: 4, left: 2, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="gainGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#7c3aed" stopOpacity={0.22} />
+                    <stop offset="100%" stopColor="#7c3aed" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="lbl" tick={{ fontSize: 8, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                <YAxis domain={gainDomain} tick={{ fontSize: 8, fill: '#8b7355' }} axisLine={false} tickLine={false} width={38} tickFormatter={(v) => gainUnit === 'k' ? `${v}k` : `${(+v).toFixed(1)}M`} />
+                <Tooltip {...TT} formatter={(v) => [gainUnit === 'k' ? `$${v}k` : `$${(+v).toFixed(1)}M`, 'Net Gain']} />
+                <Area type="monotone" dataKey="val" stroke="#7c3aed" strokeWidth={2} fill="url(#gainGrad)" dot={false} activeDot={{ r: 3, fill: '#7c3aed' }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div> */}
+
+
+        {/* 7 — Active Repairs */}
+        {(() => {
+          const teamsOut  = repairs?.teamsOut     ?? 0
+          const liveCount = repairs?.liveCount    ?? 0
+          const mismatch  = repairs?.mismatch     ?? false
+          const missing   = repairs?.missingTeams ?? 0
+          const totalDots = Math.max(teamsOut, liveCount)
+          return (
+            <div
+              className={`kpi-card ${activeCard === 'activerepairs' ? 'kpi-selected' : ''}`}
+              onClick={() => toggleCard('activerepairs')}
+              style={{ borderColor: mismatch ? 'rgba(220,38,38,.35)' : undefined }}
+            >
+              <div className="kpi-top">
+                <div className="kpi-name">Active Repairs</div>
+                <div className="kpi-icon">🔧</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, margin: '4px 0 2px' }}>
+                <div className="kpi-val" style={{ fontSize: 36 }}>{teamsOut}</div>
+                <div style={{ fontSize: 13, color: '#9ca3af', fontWeight: 500 }}>/ {liveCount} incidents</div>
+              </div>
+              {mismatch ? (
+                <div style={{ fontSize: 11, color: '#dc2626', fontWeight: 700, marginBottom: 6 }}>
+                  ⚠ {missing} team{missing > 1 ? 's' : ''} short — {liveCount - teamsOut} unassigned
+                </div>
+              ) : (
+                <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 600, marginBottom: 6 }}>✓ All incidents have teams assigned</div>
+              )}
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 4 }}>
+                {Array.from({ length: totalDots }).map((_, i) => (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                    <div style={{ fontSize: 18 }}>👷</div>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: i < teamsOut ? '#16a34a' : '#dc2626' }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
+
       </div>
 
       {/* Detail Panel */}
@@ -561,7 +667,7 @@ export default function OverviewView() {
             <div className="dp-title">{CARD_TITLES[activeCard]}</div>
             <button className="dp-close" onClick={() => setActiveCard(null)}>✕</button>
           </div>
-          <DetailContent activeCard={activeCard} incidents={allInc} responseTimes={filteredResp} tasks={filteredTasks} gains={filteredGains} dn={dn} ds={ds} san={san} period={period} />
+          <DetailContent activeCard={activeCard} incidents={allInc} responseTimes={filteredResp} tasks={filteredTasks} gains={filteredGains} repairs={repairs} dn={dn} ds={ds} san={san} period={period} />
         </div>
       )}
     </div>

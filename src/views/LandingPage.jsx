@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './LandingPage.css'
-import heroDashboard from '../assets/hero-dashboard.png.png'
-import iconLeak from '../assets/icon-leak.png.png'
-import iconSensor from '../assets/icon-sensor.png.png'
-import iconNetwork from '../assets/icon-network.png.png'
+import heroVideo from '../assets/sjs.mp4'
+import iconLeak from '../assets/icon-leak.png'
+import dashboard from '../assets/dashboard.png'
+import iconSensor from '../assets/icon-sensor.png'
+import iconNetwork from '../assets/icon-network.png'
 import favicon from '../assets/favicon.png'
 import RequestPilotModal from '../components/RequestPilotModal'
 
@@ -68,9 +69,16 @@ export default function LandingPage() {
             <span>Visual network map</span>
           </div>
 
-          {/* Hero dashboard image */}
+          {/* Hero video */}
           <div className="lp-hero-img-wrap">
-            <img src={heroDashboard} alt="Sentinel Joint System Dashboard" className="lp-hero-img" />
+            <video
+              src={heroVideo}
+              className="lp-hero-img"
+              autoPlay
+              loop
+              muted
+              playsInline
+            />
           </div>
         </div>
       </section>
@@ -129,15 +137,16 @@ export default function LandingPage() {
                 early and prioritise maintenance before failure.
               </p>
               <div className="lp-solution-tags">
-                {['Acoustic Sensing','Pressure Monitoring','Structural Movement',
-                  'Moisture Detection','AI Anomaly Models','Visual Dashboard'].map(tag => (
-                  <span key={tag} className="lp-solution-tag">{tag}</span>
-                ))}
+                {['Acoustic Sensing', 'Pressure Monitoring', 'Structural Movement',
+                  'Moisture Detection', 'AI Anomaly Models', 'Visual Dashboard'].map(tag => (
+                    <span key={tag} className="lp-solution-tag">{tag}</span>
+                  ))}
               </div>
             </div>
-            <div className="lp-solution-visual">
-              <img src={iconSensor} alt="Sentinel Joint Sensor" className="lp-solution-img" />
-            </div>
+            {/* <div className="lp-solution-visual"> */}
+            {/* <img src={dashboard} alt="Sentinel Joint Sensor" className="lp-solution-img" /> */}
+            <img src={dashboard} alt="Sentinel Joint Sensor" className="" style={{borderRadius:'16px'}}/>
+            {/* </div> */}
           </div>
         </div>
       </section>
@@ -145,7 +154,7 @@ export default function LandingPage() {
       {/* ── How it Works ── */}
       <section className="lp-how lp-section" id="how-it-works">
         <div className="lp-section-inner">
-          <div className="lp-section-label" style={{justifyContent:'center'}}>How it Works</div>
+          <div className="lp-section-label" style={{ justifyContent: 'center' }}>How it Works</div>
           <h2>From raw signal to clear action</h2>
           <p className="lp-how-sub">
             Four steps from sensor installation to prioritised alerts your team can act on immediately.

@@ -104,3 +104,19 @@ export function useDistrictController(districtId) {
 
   return { data, loading }
 }
+
+export function useActiveRepairs(districtId) {
+  const [data, setData]       = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    const url = districtId ? `/kpi/active-repairs?districtId=${districtId}` : '/kpi/active-repairs'
+    client.get(url)
+      .then((res) => setData(res.data.data))
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [districtId])
+
+  return { data, loading }
+}

@@ -31,6 +31,7 @@
   height: 60px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 40px;
 }
 
@@ -718,6 +719,26 @@
 }
 
 /* ─── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .lp-hero {
+    text-align: left;
+    padding: 60px 20px 0;
+  }
+
+  .lp-hero-sub {
+    margin: 0 0 28px;
+  }
+
+  .lp-hero-ctas {
+    justify-content: flex-start;
+  }
+
+  .lp-hero-features {
+    justify-content: flex-start;
+    gap: 16px;
+  }
+}
+
 @media (max-width: 768px) {
   .lp-problem-cards {
     grid-template-columns: 1fr;

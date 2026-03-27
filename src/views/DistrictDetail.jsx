@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import client from '../api/client'
+import { useActiveRepairs } from '../hooks/Usekpi'
 import NetworkHealthBanner from '../components/NetworkHealthBanner'
 import { DistrictDetailSkeleton } from '../components/Skeleton'
 
@@ -188,7 +189,7 @@ function TrendBadge({ pct, dir, label, invertGood = false }) {
 function KpiCard({ icon, title, value, unit, trend, invertGood }) {
   return (
     <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12,
-      padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', flex: 1, minWidth: 0 }}>
+      padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', flex: '1 1 140px', minWidth: 0 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', letterSpacing: .5, textTransform: 'uppercase' }}>{title}</span>
         <span style={{ fontSize: 18 }}>{icon}</span>
@@ -226,6 +227,7 @@ export default function DistrictDetailView() {
   const [kpiData,      setKpiData]      = useState(null)
   const [period,       setPeriod]       = useState('today')
   const [loading,      setLoading]      = useState(true)
+  const { data: repairs } = useActiveRepairs(districtId)
 
   // District + subareas — runs once per districtId, never on period change
   useEffect(() => {
@@ -542,7 +544,42 @@ export default function DistrictDetailView() {
           trend={{ pct: trends.response?.pct, dir: trends.response?.dir, label: cmpLabel }} invertGood />
         <KpiCard icon="✅" title="Completed Tasks" value={completedTasks}
           trend={{ pct: trends.tasks?.pct, dir: trends.tasks?.dir, label: cmpLabel }} />
-        <KpiCard icon="📊" title="District Health" value={district.health.charAt(0).toUpperCase() + district.health.slice(1)} />
+        {(() => {
+          const teamsOut  = repairs?.teamsOut     ?? 0
+          const liveCount = repairs?.liveCount    ?? 0
+          const mismatch  = repairs?.mismatch     ?? false
+          const missing   = repairs?.missingTeams ?? 0
+          return (
+            <div style={{
+              background: '#fff', border: `1px solid ${mismatch ? 'rgba(220,38,38,.35)' : '#e5e7eb'}`,
+              borderRadius: 12, padding: '14px 16px',
+              boxShadow: mismatch ? '0 0 0 3px rgba(220,38,38,.08)' : '0 1px 3px rgba(0,0,0,.05)',
+              flex: '1 1 140px', minWidth: 0,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', letterSpacing: .5, textTransform: 'uppercase' }}>Available Units</span>
+                <span style={{ fontSize: 18 }}>🔧</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+                <span style={{ fontFamily: 'monospace', fontSize: 32, fontWeight: 700, color: '#111827', lineHeight: 1 }}>{teamsOut}</span>
+                <span style={{ fontSize: 13, color: '#9ca3af' }}>/ {liveCount} incidents</span>
+              </div>
+              {mismatch ? (
+                <div style={{ fontSize: 11, color: '#dc2626', fontWeight: 700 }}>⚠ {missing} team{missing > 1 ? 's' : ''} short</div>
+              ) : (
+                <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>✓ All incidents assigned</div>
+              )}
+              <div style={{ display: 'flex', gap: 4, marginTop: 8, flexWrap: 'wrap' }}>
+                {Array.from({ length: Math.max(teamsOut, liveCount) }).map((_, i) => (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                    <span style={{ fontSize: 13 }}>👷</span>
+                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: i < teamsOut ? '#16a34a' : '#dc2626' }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
       </div>
 
       {/* ── Map — identical look & feel to MapView ───────────────────────── */}

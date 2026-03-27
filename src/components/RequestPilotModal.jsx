@@ -35,12 +35,32 @@ export default function RequestPilotModal({ open, onClose }) {
     setTimeout(() => { setForm(INITIAL); setErrors({}); setStatus('idle') }, 300)
   }
 
+  function validateField(id, value) {
+    switch (id) {
+      case 'name':
+        return value.trim() ? '' : 'Full name is required'
+      case 'email':
+        if (!value.trim()) return 'Email is required'
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) return 'Enter a valid email address'
+        return ''
+      case 'organisation':
+        return value.trim() ? '' : 'Organisation is required'
+      case 'phone':
+        if (!value.trim()) return ''
+        if (!/^[+\d][\d\s\-().]{6,}$/.test(value.trim())) return 'Enter a valid phone number'
+        return ''
+      default:
+        return ''
+    }
+  }
+
   function validate() {
     const e = {}
-    if (!form.name.trim())         e.name         = 'Full name is required'
-    if (!form.email.trim())        e.email        = 'Email is required'
-    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Enter a valid email'
-    if (!form.organisation.trim()) e.organisation = 'Organisation is required'
+    const fields = ['name', 'email', 'organisation', 'phone']
+    fields.forEach((id) => {
+      const msg = validateField(id, form[id])
+      if (msg) e[id] = msg
+    })
     return e
   }
 
@@ -79,7 +99,18 @@ export default function RequestPilotModal({ open, onClose }) {
           placeholder={placeholder}
           value={form[id]}
           ref={id === 'name' ? firstRef : undefined}
-          onChange={(e) => setForm((p) => ({ ...p, [id]: e.target.value }))}
+          onChange={(e) => {
+            const val = e.target.value
+            setForm((p) => ({ ...p, [id]: val }))
+            if (errors[id]) {
+              const msg = validateField(id, val)
+              setErrors((p) => ({ ...p, [id]: msg }))
+            }
+          }}
+          onBlur={(e) => {
+            const msg = validateField(id, e.target.value)
+            if (msg) setErrors((p) => ({ ...p, [id]: msg }))
+          }}
           className={errors[id] ? 'rpm-input-error' : ''}
           autoComplete={type === 'email' ? 'email' : 'off'}
         />
@@ -123,7 +154,9 @@ export default function RequestPilotModal({ open, onClose }) {
               {field('email',        'Email Address',    'email', 'jane@organisation.com',         true)}
               {field('organisation', 'Organisation',     'text',  'City Water Authority',          true)}
               {field('phone',        'Phone',            'tel',   '+1 (555) 000-0000',             false)}
-              {field('networkSize',  'Network Size',     'text',  'e.g. 500 km of pipelines',     false, 'Approximate length or number of monitored assets')}
+              <div className="rpm-field--full">
+                {field('networkSize', 'Network Size', 'text', 'e.g. 500 km of pipelines', false, 'Approximate length or number of monitored assets')}
+              </div>
             </div>
 
             <div className="rpm-field rpm-field--full">

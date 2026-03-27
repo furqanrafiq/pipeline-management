@@ -658,6 +658,26 @@ body {
   flex-shrink: 0;
 }
 
+@media (max-width: 620px) {
+  .nh-banner {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .nh-mid {
+    min-width: 0;
+  }
+  /* hide the separator before the stats row */
+  .nh-sep:last-of-type {
+    display: none;
+  }
+  .nh-meta {
+    width: 100%;
+    justify-content: space-around;
+    padding-top: 10px;
+    border-top: 1px solid var(--border2);
+  }
+}
+
 .nh-stat {
   text-align: center;
   min-width: 52px;

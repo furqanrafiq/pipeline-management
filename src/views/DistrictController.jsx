@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { useDistrictController } from '../hooks/useKpi'
+import { useDistrictController, useActiveRepairs } from '../hooks/useKpi'
 import NetworkHealthBanner from '../components/NetworkHealthBanner'
 import client from '../api/client'
 import { DistrictControllerSkeleton } from '../components/Skeleton'
@@ -18,6 +18,7 @@ export default function DistrictControllerView() {
 
     // Full district data (incidents, KPIs, predictions)
     const { data, loading } = useDistrictController(districtId || 'D1')
+    const { data: repairs }  = useActiveRepairs(districtId || 'D1')
 
     // ── When subareaId changes → fetch that subarea's pipelines ────────────────
     useEffect(() => {
@@ -117,13 +118,24 @@ export default function DistrictControllerView() {
                     </div>
                     <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>{tasks?.completionRate ?? 0}% completion rate</div>
                 </div>
-                <div className="kpi-card" style={{ borderColor: aiPredictions.length > 0 ? 'rgba(124,58,237,.3)' : undefined }}>
-                    <div className="kpi-top"><div className="kpi-name">AI Predictions</div><div className="kpi-icon">🧠</div></div>
-                    <div className="kpi-val">{aiPredictions.length}</div>
-                    <div className="ai-preview-list" style={{ marginTop: 8 }}>
-                        {aiPredictions.slice(0, 2).map((p) => (
-                            <div key={p._id} className={`ai-preview-item ${p.severity === 'critical' ? 'alert-red' : 'alert-yellow'}`}>
-                                {p.severity === 'critical' ? '⚠' : '▲'} {p.predictedType} · ~{p.daysUntilEvent}d · {p.probability}%
+                <div className="kpi-card" style={{ borderColor: repairs?.mismatch ? 'rgba(220,38,38,.35)' : undefined, boxShadow: repairs?.mismatch ? '0 0 0 3px rgba(220,38,38,.08)' : undefined, cursor: 'pointer' }} onClick={() => setActiveDetail(activeDetail === 'repairs' ? null : 'repairs')}>
+                    <div className="kpi-top"><div className="kpi-name">Available Units</div><div className="kpi-icon">🔧</div></div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, margin: '4px 0 2px' }}>
+                        <div className="kpi-val">{repairs?.teamsOut ?? '—'}</div>
+                        <div style={{ fontSize: 13, color: '#9ca3af' }}>/ {repairs?.liveCount ?? 0} incidents</div>
+                    </div>
+                    {repairs?.mismatch ? (
+                        <div style={{ fontSize: 11, color: '#dc2626', fontWeight: 700, marginBottom: 6 }}>
+                            ⚠ {repairs.missingTeams} team{repairs.missingTeams > 1 ? 's' : ''} short — {repairs.liveCount - repairs.teamsOut} unassigned
+                        </div>
+                    ) : (
+                        <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 600, marginBottom: 6 }}>✓ All incidents assigned</div>
+                    )}
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+                        {Array.from({ length: Math.max(repairs?.teamsOut ?? 0, repairs?.liveCount ?? 0) }).map((_, i) => (
+                            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                                <span style={{ fontSize: 13 }}>👷</span>
+                                <div style={{ width: 5, height: 5, borderRadius: '50%', background: i < (repairs?.teamsOut ?? 0) ? '#16a34a' : '#dc2626' }} />
                             </div>
                         ))}
                     </div>
@@ -180,8 +192,58 @@ export default function DistrictControllerView() {
                 </div>
             )}
 
+            {/* Repair Jobs Panel */}
+            {activeDetail === 'repairs' && repairs?.jobs && (
+                <div className="incident-panel">
+                    <div className="incident-panel-header">
+                        <span>🔧 Active Repair Jobs — {district.name}</span>
+                        <button onClick={() => setActiveDetail(null)} className="incident-close">✕</button>
+                    </div>
+                    {repairs.mismatch && (
+                        <div style={{ padding: '8px 16px', background: 'rgba(220,38,38,.06)', borderBottom: '1px solid rgba(220,38,38,.15)', fontSize: 12, color: '#dc2626', fontWeight: 600 }}>
+                            ⚠ {repairs.missingTeams} incident{repairs.missingTeams > 1 ? 's' : ''} without assigned team
+                        </div>
+                    )}
+                    {repairs.jobs.length === 0 ? (
+                        <div style={{ padding: 16, color: '#9ca3af', fontSize: 13 }}>No repair teams currently dispatched</div>
+                    ) : (
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                            <thead>
+                                <tr style={{ background: '#f9fafb' }}>
+                                    {['Job #', 'Team', 'Area', 'Joint', 'Elapsed', 'Severity'].map(h => (
+                                        <th key={h} style={{ padding: '7px 14px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: '#9ca3af', letterSpacing: .5, textTransform: 'uppercase', borderBottom: '1px solid #f3f4f6' }}>{h}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {repairs.jobs.map((job, i) => {
+                                    const hrs = Math.floor(job.elapsedMinutes / 60)
+                                    const mins = job.elapsedMinutes % 60
+                                    const elapsed = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`
+                                    const sevColor = job.severity === 'critical' ? '#dc2626' : '#ca8a04'
+                                    return (
+                                        <tr key={job.jobNumber} style={{ borderBottom: '1px solid #f3f4f6', background: i % 2 === 0 ? '#fff' : '#fafbff' }}>
+                                            <td style={{ padding: '8px 14px', fontFamily: 'monospace', fontWeight: 700, color: '#2563eb', fontSize: 11 }}>{job.jobNumber}</td>
+                                            <td style={{ padding: '8px 14px', fontWeight: 600, color: '#111827' }}>{job.teamName}</td>
+                                            <td style={{ padding: '8px 14px', color: '#374151' }}>{job.area}</td>
+                                            <td style={{ padding: '8px 14px', fontFamily: 'monospace', color: '#6b7280', fontSize: 11 }}>{job.jointRef}</td>
+                                            <td style={{ padding: '8px 14px', fontFamily: 'monospace', fontWeight: 600, color: job.elapsedMinutes > 60 ? '#dc2626' : '#374151' }}>{elapsed}</td>
+                                            <td style={{ padding: '8px 14px' }}>
+                                                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: `${sevColor}15`, color: sevColor, textTransform: 'uppercase', border: `1px solid ${sevColor}30` }}>
+                                                    {job.severity}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+            )}
+
             {/* Incident Detail Panel */}
-            {activeDetail && (
+            {activeDetail && activeDetail !== 'repairs' && (
                 <div className="incident-list">
                     <div className="incident-list-header">
                         {activeDetail === 'critical' ? '🔴 Critical Incidents' : '🟡 Live Incidents'}

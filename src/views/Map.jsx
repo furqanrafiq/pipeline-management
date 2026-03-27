@@ -286,8 +286,8 @@ export default function MapView() {
     useEffect(() => {
         const map = new mapboxgl.Map({
             container: mapRef.current,
-            // style: 'mapbox://styles/mapbox/standard',
-            style: 'mapbox://styles/mapbox/light-v11',
+            style: 'mapbox://styles/mapbox/standard',
+            // style: 'mapbox://styles/mapbox/light-v11',
             center: [46.7167, 24.6833],
             zoom: 11,
         })

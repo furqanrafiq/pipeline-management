@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Aside from './components/Aside'
 import Header from './components/Header'
 import './App.css'
@@ -10,6 +10,15 @@ import AiPredictiveView from './views/AiPredictive'
 import DistrictDetailView from './views/DistrictDetail'
 import LandingPage from './views/LandingPage'
 import LoginPage from './views/LoginPage'
+
+function RequireAuth({ children }) {
+  const location = useLocation()
+  const token = localStorage.getItem('sjs_token')
+  if (!token) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+  return children
+}
 
 function DashboardShell() {
   return (
@@ -38,7 +47,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/app/*" element={<DashboardShell />} />
+        <Route path="/app/*" element={<RequireAuth><DashboardShell /></RequireAuth>} />
       </Routes>
     </BrowserRouter>
   )

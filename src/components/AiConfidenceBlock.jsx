@@ -1,7 +1,7 @@
 // Shows AI confidence % + alternative scenarios breakdown
 // Used inside the Critical Incidents KPI card
 
-export default function AiConfidenceBlock({ incident }) {
+export default function AiConfidenceBlock({ incident, dn, san }) {
     if (!incident) return null
     const top = incident.aiBreakdown?.[0]
     const alts = incident.aiBreakdown?.slice(1) || []
@@ -37,7 +37,7 @@ export default function AiConfidenceBlock({ incident }) {
             </div>
 
             <div className="ai-conf-ref">
-                {incident.districtId} · {incident.subareaId?.split('-').slice(-1)[0]}
+                {dn ? dn(incident.districtId) : incident.districtId} · {san ? san(incident.subareaId) : incident.subareaId?.split('-').slice(-1)[0]}
             </div>
         </div>
     )

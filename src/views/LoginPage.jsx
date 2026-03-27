@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link, Navigate } from 'react-router-dom'
 import './LoginPage.css'
 import favicon from '../assets/favicon.png'
 import client from '../api/client'
+import RequestPilotModal from '../components/RequestPilotModal'
 
 function IconSJS({ size = 22 }) {
   return <img src={favicon} width={size} height={size} alt="SJS" style={{ display: 'block' }} />
@@ -10,10 +11,18 @@ function IconSJS({ size = 22 }) {
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const from = location.state?.from?.pathname || '/app'
+
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [pilotOpen, setPilotOpen] = useState(false)
+
+  if (localStorage.getItem('sjs_token')) {
+    return <Navigate to={from} replace />
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -27,7 +36,7 @@ export default function LoginPage() {
       const res = await client.post('/auth/login', { username, password })
       localStorage.setItem('sjs_token', res.data.token)
       localStorage.setItem('sjs_user', JSON.stringify(res.data.user))
-      navigate('/app')
+      navigate(from, { replace: true })
     } catch (err) {
       const msg = err.response?.data?.message || 'Invalid credentials. Please try again.'
       setError(msg)
@@ -38,6 +47,8 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
+
+      <RequestPilotModal open={pilotOpen} onClose={() => setPilotOpen(false)} />
       {/* Background grid */}
       <div className="login-bg-grid" />
 
@@ -95,15 +106,9 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="login-divider"><span>or continue with</span></div>
-
-          <button className="login-btn-demo" onClick={() => navigate('/app')}>
-            Enter as Demo User
-          </button>
-
           <p className="login-footer-note">
             Don't have access?{' '}
-            <a href="#">Request a pilot</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); setPilotOpen(true) }}>Request a pilot</a>
           </p>
         </div>
 

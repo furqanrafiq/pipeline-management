@@ -7,7 +7,6 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
 }
 
 .login-page *, .login-page *::before, .login-page *::after {
